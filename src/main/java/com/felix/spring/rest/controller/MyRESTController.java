@@ -1,11 +1,13 @@
 package com.felix.spring.rest.controller;
 
 import com.felix.spring.rest.entity.Employee;
+import com.felix.spring.rest.exception_handling.EmployeeIncorrectData;
+import com.felix.spring.rest.exception_handling.NoSuchEmployeeException;
 import com.felix.spring.rest.service.EmployeeService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -19,5 +21,30 @@ public class MyRESTController {
     @GetMapping("/employees")
     public List<Employee> showAllEmployees(){
         return employeeService.getAllEmployees();
+    }
+
+    @GetMapping("/employees/{id}")
+    public Employee getEmployee(@PathVariable int id){
+
+        Employee employee = employeeService.getEmployee(id);
+        if(employee == null){
+            throw new NoSuchEmployeeException(String.format("There is no employee with employee " +
+                    "with ID - %d in Database", id));
+        }
+        return employee;
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<EmployeeIncorrectData> handlerException(NoSuchEmployeeException exception){
+        EmployeeIncorrectData employeeIncorrectData = new EmployeeIncorrectData();
+        employeeIncorrectData.setInfo(exception.getMessage());
+        return new ResponseEntity<>(employeeIncorrectData, HttpStatus.NOT_FOUND);
+    }
+
+    @ExceptionHandler
+    public ResponseEntity<EmployeeIncorrectData> handlerException(Exception exception){
+        EmployeeIncorrectData employeeIncorrectData = new EmployeeIncorrectData();
+        employeeIncorrectData.setInfo(exception.getMessage());
+        return new ResponseEntity<>(employeeIncorrectData, HttpStatus.BAD_REQUEST);
     }
 }
